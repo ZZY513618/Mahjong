@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>四川麻将·换三张 - 最新最终版</title>
+<style>
+* {
+  margin:0; padding:0; box-sizing:border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+}
+:root {
+  --primary: #06c160;
+  --primary-dark: #05a050;
+  --danger: #ff3b30;
+  --warning: #ff9500;
+  --gray: #8e8e93;
+  --light-gray: #f2f2f7;
+  --bg: #f5f7fa;
+  --card-bg: #ffffff;
+  --text: #1c1c1e;
+  --text-secondary: #3a3a3c;
+  --border: #d1d1d6;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
+}
+.page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 12px;
+  display: none;
+}
+.page.active {
+  display: block;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: var(--text);
+}
+.btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn:hover {
+  background: var(--primary-dark);
+}
+.btn.gray {
+  background: var(--gray);
+}
+.btn.small {
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.btn.danger {
+  background: var(--danger);
+}
+input, select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 8px 0;
+  font-size: 16px;
+  background: #fff;
+}
+.label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.text-center {
+  text-align: center;
+}
+.flex {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.list-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--light-gray);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.list-item:last-child {
+  border-bottom: none;
+}
+.avatar-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--light-gray);
+  background-size: cover;
+  background-position: center;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.badge-warning {
+  background: var(--warning);
+  color: #fff;
+}
+.badge-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* 麻将牌样式 */
+.tile {
+  width: 34px;
+  height: 48px;
+  background: #fff;
+  border: 1px solid #333;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  font-weight: bold;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.tile.back {
+  background: #555;
+  color: transparent;
+  background-image: linear-gradient(45deg, #444 25%, transparent 25%, transparent 75%, #444 75%, #444),
+                    linear-gradient(45deg, #444 25%, transparent 25%, transparent 75%, #444 75%, #444);
+  background-size: 8px 8px;
+  background-position: 0 0, 4px 4px;
+}
+.tile-wan { color: #d32f2f; }
+.tile-tiao { color: #388e3c; }
+.tile-tong { color: #1976d2; }
+
+/* 游戏桌 */
+.table {
+  background: #0a9d50;
+  border-radius: 20px;
+  padding: 20px;
+  color: #fff;
+  margin: 16px 0;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+}
+.table-log {
+  min-height: 140px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+  margin-bottom: 16px;
+}
+.table-hand {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gray);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-track {
+  background: var(--light-gray);
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== 登录 ===================== -->
+<div class="page active" id="loginPage">
+  <div class="card">
+    <div class="card-title">登录 / 注册</div>
+    <div class="label">输入你的昵称（ID）</div>
+    <input id="loginNick" placeholder="请输入昵称" />
+    <div class="label">上传头像</div>
+    <input type="file" id="avatarUpload" accept="image/*">
+    <div class="avatar-preview" id="avatarPreview" style="width:80px;height:80px;border-radius:50%;background:var(--light-gray);margin:8px 0;background-size:cover;background-position:center;"></div>
+    <div class="label">擅长麻将（可多选）</div>
+    <select id="majiangTags" multiple style="height:120px;">
+      <option value="四川麻将">四川麻将</option>
+      <option value="广东麻将">广东麻将</option>
+      <option value="国标麻将">国标麻将</option>
+      <option value="日本麻将">日本麻将</option>
+    </select>
+    <button class="btn" onclick="doLogin()">进入游戏</button>
+  </div>
+</div>
+
+<!-- ===================== 大厅 ===================== -->
+<div class="page" id="hallPage">
+  <div class="card">
+    <div class="card-title">游戏大厅</div>
+    <div class="list-item">
+      <div class="avatar-small" id="hallAvatar"></div>
+      <div>
+        <div><strong id="hallNick"></strong> <span class="badge badge-primary" id="hallUid"></span></div>
+        <div style="font-size:14px;color:var(--text-secondary);"><span id="hallLevel"></span> | <span id="hallScore"></span>分</div>
+      </div>
+    </div>
+    <button class="btn" onclick="gotoPage('createPage')">创建房间</button>
+    <button class="btn" onclick="gotoPage('joinPage')">加入房间</button>
+    <button class="btn" onclick="gotoPage('rankPage')">全服排行</button>
+    <button class="btn" onclick="gotoPage('recordPage')">我的战绩</button>
+    <button id="adminBtn" class="btn danger" style="display:none;" onclick="gotoPage('adminPage')">服主后台</button>
+    <button class="btn gray" onclick="doLogout()">退出登录</button>
+  </div>
+</div>
+
+<!-- ===================== 创建房间 ===================== -->
+<div class="page" id="createPage">
+  <div class="card">
+    <div class="card-title">创建房间</div>
+    <div class="label">房间密码（选填，不填则公开）</div>
+    <input id="createPwd" placeholder="选填，留空为公开房间" />
+    <button class="btn" onclick="createRoom()">创建</button>
+    <button class="btn gray" onclick="gotoPage('hallPage')">返回</button>
+  </div>
+</div>
+
+<!-- ===================== 加入房间 ===================== -->
+<div class="page" id="joinPage">
+  <div class="card">
+    <div class="card-title">加入房间</div>
+    <div class="label">6位房间号</div>
+    <input id="joinId" placeholder="请输入房间号" />
+    <div class="label">房间密码（有密码则填）</div>
+    <input id="joinPwd" placeholder="选填" />
+    <button class="btn" onclick="joinRoom()">加入</button>
+    <button class="btn gray" onclick="gotoPage('hallPage')">返回</button>
+  </div>
+</div>
+
+<!-- ===================== 房间 ===================== -->
+<div class="page" id="roomPage">
+  <div class="card">
+    <div class="card-title">房间 <span id="roomId"></span></div>
+    <div class="label">房间状态：<span id="roomStatus"></span></div>
+    <div class="label">房间密码：<span id="roomPwdShow"></span></div>
+    <div id="roomPlayers" style="margin:12px 0;"></div>
+    <button id="startBtn" class="btn" style="display:none;">开始游戏</button>
+    <button id="watchBtn" class="btn" style="display:none;">进入观战</button>
+    <button class="btn gray" onclick="leaveRoom()">离开房间</button>
+  </div>
+</div>
+
+<!-- ===================== 游戏（玩家） ===================== -->
+<div class="page" id="gamePage">
+  <div class="card">
+    <div class="card-title">对局中 <span id="gameRoomId"></span></div>
+    <div id="gamePlayersInfo" style="margin-bottom:12px; font-size:14px;"></div>
+    <div class="flex">
+      <button class="btn small" onclick="actDraw()">摸牌</button>
+      <button class="btn small" onclick="actPeng()">碰</button>
+      <button class="btn small" onclick="actGang()">杠</button>
+      <button class="btn small" onclick="actHu()">胡</button>
+      <button class="btn small gray" onclick="actPass()">过</button>
+    </div>
+    <div class="table">
+      <div id="gameLog" class="table-log">游戏日志加载中...</div>
+      <div id="gameHand" class="table-hand"></div>
+    </div>
+    <button class="btn gray" onclick="backToRoom()">返回房间</button>
+  </div>
+</div>
+
+<!-- ===================== 观战 ===================== -->
+<div class="page" id="watchPage">
+  <div class="card">
+    <div class="card-title">观战中 <span id="watchRoomId"></span></div>
+    <div id="watchPlayers" style="margin-bottom:12px; font-size:14px;"></div>
+    <div class="table">
+      <div id="watchLog" class="table-log">观战日志加载中...</div>
+      <div id="watchTable" class="table-hand" style="justify-content:space-around;"></div>
+    </div>
+    <button class="btn gray" onclick="backToRoom()">返回房间</button>
+  </div>
+</div>
+
+<!-- ===================== 结算 ===================== -->
+<div class="page" id="resultPage">
+  <div class="card">
+    <div class="card-title">本局结算</div>
+    <div id="resultContent" style="font-size:15px; line-height:1.7; margin-bottom:16px;"></div>
+    <button class="btn" onclick="backToRoom()">返回房间</button>
+  </div>
+</div>
+
+<!-- ===================== 全服排行 ===================== -->
+<div class="page" id="rankPage">
+  <div class="card">
+    <div class="card-title">全服排行榜</div>
+    <div id="rankList" style="font-size:15px; line-height:1.8;"></div>
+    <button class="btn gray" onclick="gotoPage('hallPage')">返回</button>
+  </div>
+</div>
+
+<!-- ===================== 我的战绩 ===================== -->
+<div class="page" id="recordPage">
+  <div class="card">
+    <div class="card-title">我的战绩</div>
+    <div id="myRecords" style="font-size:14px; line-height:1.7;"></div>
+    <button class="btn gray" onclick="gotoPage('hallPage')">返回</button>
+  </div>
+</div>
+
+<!-- ===================== 服主后台 ===================== -->
+<div class="page" id="adminPage">
+  <div class="card">
+    <div class="card-title">服主后台（观雀人）</div>
+    <div class="label">用户UID（数字）</div>
+    <input id="adminUid" placeholder="输入用户数字UID" />
+    <div class="label">积分变动（正数加分，负数扣分）</div>
+    <input id="adminScore" placeholder="例如：+100 或 -50" />
+    <button class="btn danger" onclick="adminChangeScore()">修改积分</button>
+    <button class="btn danger" onclick="adminKick()">踢出用户</button>
+    <button class="btn danger" onclick="adminClearRecord()">清空战绩</button>
+    <button class="btn gray" onclick="gotoPage('hallPage')">返回</button>
+  </div>
+</div>
+
+<script>
+// ===================== 核心常量 =====================
+const ADMIN_NICK = "观雀人";
+const INIT_SCORE = 1000;
+const FAN_SCORE = [4,8,16,32,64,128];
+const START_UID = 1000;
+
+// ===================== 全局状态 =====================
+let user = null;
+let room = null;
+let game = null;
+let db = { users: {}, rooms: {}, records: {}, nextUid: START_UID };
+
+// ===================== 页面切换 =====================
+function gotoPage(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// ===================== 存储 =====================
+function loadDB() {
+  const d = localStorage.getItem("majiang_db");
+  if (d) db = JSON.parse(d);
+  else db = { users: {}, rooms: {}, records: {}, nextUid: START_UID };
+}
+function saveDB() {
+  localStorage.setItem("majiang_db", JSON.stringify(db));
+}
+function saveUser(u) {
+  user = u;
+  db.users[u.uid] = u;
+  saveDB();
+  refreshHall();
+}
+function loadUser() {
+  const u = localStorage.getItem("majiang_user");
+  if (u) user = JSON.parse(u);
+}
+
+// ===================== 段位 =====================
+function getLevel(score) {
+  if (score >= 1900) return "专业10段";
+  if (score >= 1800) return "专业9段";
+  if (score >= 1700) return "专业8段";
+  if (score >= 1600) return "专业7段";
+  if (score >= 1500) return "专业6段";
+  if (score >= 1400) return "专业5段";
+  if (score >= 1300) return "专业4段";
+  if (score >= 1200) return "专业3段";
+  if (score >= 1100) return "专业2段";
+  if (score >= 1000) return "专业1段";
+  if (score >= 950) return "业余10级";
+  if (score >= 900) return "业余9级";
+  if (score >= 850) return "业余8级";
+  if (score >= 800) return "业余7级";
+  if (score >= 750) return "业余6级";
+  if (score >= 700) return "业余5级";
+  if (score >= 650) return "业余4级";
+  if (score >= 600) return "业余3级";
+  if (score >= 550) return "业余2级";
+  return "业余1级";
+}
+
+// ===================== 登录 =====================
+let selectedAvatar = null;
+document.getElementById("avatarUpload").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    selectedAvatar = ev.target.result;
+    document.getElementById("avatarPreview").style.backgroundImage = `url(${selectedAvatar})`;
+  };
+  reader.readAsDataURL(file);
+});
+
+function doLogin() {
+  const nick = document.getElementById("loginNick").value.trim();
+  const tags = Array.from(document.getElementById("majiangTags").selectedOptions).map(o => o.value);
+  if (!nick || !selectedAvatar || tags.length === 0) {
+    alert("请完成所有注册项：昵称、头像、至少选择一种麻将");
+    return;
+  }
+  loadDB();
+  const uid = db.nextUid++;
+  const u = {
+    uid: uid,
+    nick: nick,
+    avatar: selectedAvatar,
+    tags: tags,
+    score: INIT_SCORE,
+    level: getLevel(INIT_SCORE),
+    isAdmin: nick === ADMIN_NICK,
+    records: []
+  };
+  saveUser(u);
+  localStorage.setItem("majiang_user", JSON.stringify(u));
+  gotoPage("hallPage");
+}
+function doLogout() {
+  user = null;
+  room = null;
+  game = null;
+  selectedAvatar = null;
+  localStorage.removeItem("majiang_user");
+  localStorage.removeItem("majiang_room");
+  gotoPage("loginPage");
+}
+function refreshHall() {
+  if (!user) return;
+  document.getElementById("hallAvatar").style.backgroundImage = `url(${user.avatar})`;
+  document.getElementById("hallNick").innerText = user.nick;
+  document.getElementById("hallUid").innerText = `UID: ${user.uid}`;
+  document.getElementById("hallLevel").innerText = user.level;
+  document.getElementById("hallScore").innerText = user.score;
+  document.getElementById("adminBtn").style.display = user.isAdmin ? "block" : "none";
+}
+
+// ===================== 房间 =====================
+function createRoom() {
+  if (!user) { gotoPage("loginPage"); return; }
+  loadDB();
+  const roomId = String(Math.floor(100000 + Math.random()*900000));
+  const pwd = document.getElementById("createPwd").value.trim();
+  const r = {
+    id: roomId,
+    pwd: pwd,
+    owner: user.uid,
+    players: [user],
+    watchers: [],
+    status: "waiting",
+    game: null
+  };
+  db.rooms[roomId] = r;
+  saveDB();
+  room = r;
+  localStorage.setItem("majiang_room", JSON.stringify(r));
+  showRoom();
+}
+function joinRoom() {
+  if (!user) { gotoPage("loginPage"); return; }
+  loadDB();
+  const roomId = document.getElementById("joinId").value.trim();
+  const pwd = document.getElementById("joinPwd").value.trim();
+  if (roomId.length !== 6) { alert("请输入6位房间号"); return; }
+  const r = db.rooms[roomId];
+  if (!r) { alert("房间不存在"); return; }
+  if (r.pwd && r.pwd !== pwd) { alert("密码错误"); return; }
+  if (r.players.length >= 4) {
+    r.watchers.push(user);
+    alert("房间已满，已进入观战");
+  } else {
+    r.players.push(user);
+  }
+  db.rooms[roomId] = r;
+  saveDB();
+  room = r;
+  localStorage.setItem("majiang_room", JSON.stringify(r));
+  showRoom();
+}
+function showRoom() {
+  gotoPage("roomPage");
+  document.getElementById("roomId").innerText = room.id;
+  document.getElementById("roomStatus").innerText = room.status === "waiting" ? "等待中" : "游戏中";
+  document.getElementById("roomPwdShow").innerText = room.pwd ? "已设置" : "公开";
+  let html = "";
+  room.players.forEach((p, i) => {
+    html += `<div class="list-item">
+      <div class="avatar-small" style="background-image:url(${p.avatar})"></div>
+      <div>
+        <div>${i+1}. ${p.nick} <span class="badge badge-primary">UID: ${p.uid}</span></div>
+        <div style="font-size:14px;color:var(--text-secondary);">${p.level} | ${p.score}分</div>
+      </div>
+    </div>`;
+  });
+  if (room.watchers.length > 0) {
+    html += `<div class="label" style="margin-top:12px;">观战(${room.watchers.length})</div>`;
+    room.watchers.forEach(w => {
+      html += `<div class="list-item">
+        <div class="avatar-small" style="background-image:url(${w.avatar})"></div>
+        <div>• ${w.nick} <span class="badge badge-primary">UID: ${w.uid}</span></div>
+      </div>`;
+    });
+  }
+  document.getElementById("roomPlayers").innerHTML = html;
+  document.getElementById("startBtn").style.display =
+    (room.owner === user.uid && room.players.length >=4 && room.status === "waiting") ? "block" : "none";
+  document.getElementById("watchBtn").style.display =
+    (room.players.length >=4 && room.status === "gaming") ? "block" : "none";
+  document.getElementById("startBtn").onclick = () => startGame();
+}
+function leaveRoom() {
+  if (!room) { gotoPage("hallPage"); return; }
+  loadDB();
+  const r = db.rooms[room.id];
+  if (r) {
+    r.players = r.players.filter(p => p.uid !== user.uid);
+    r.watchers = r.watchers.filter(w => w.uid !== user.uid);
+    if (r.players.length === 0 && r.watchers.length === 0) {
+      delete db.rooms[room.id];
+    }
+    saveDB();
+  }
+  room = null;
+  localStorage.removeItem("majiang_room");
+  gotoPage("hallPage");
+}
+
+// ===================== 游戏 =====================
+function startGame() {
+  loadDB();
+  const r = db.rooms[room.id];
+  r.status = "gaming";
+  const g = {
+    room: r.id,
+    players: JSON.parse(JSON.stringify(r.players)),
+    banker: r.players[0].uid,
+    log: [],
+    wall: [],
+    discards: [],
+    hands: {}
+  };
+  // 生成牌墙
+  const suits = ["万","条","筒"];
+  for (let s of suits) for (let i=1; i<=9; i++) for (let j=0; j<4; j++) {
+    g.wall.push(i+s);
+  }
+  // 洗牌
+  for (let i=g.wall.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [g.wall[i], g.wall[j]] = [g.wall[j], g.wall[i]];
+  }
+  // 发牌
+  g.players.forEach(p => {
+    g.hands[p.uid] = g.wall.splice(0,13);
+  });
+  addGameLog(g, `【系统】游戏开始，庄家：${g.players[0].nick}（UID: ${g.players[0].uid}）`);
+  r.game = g;
+  db.rooms[room.id] = r;
+  saveDB();
+  room = r;
+  game = g;
+  showGame();
+}
+function addGameLog(g, msg) {
+  g.log.push(msg);
+  if (g.log.length > 30) g.log.shift();
+}
+function showGame() {
+  gotoPage("gamePage");
+  document.getElementById("gameRoomId").innerText = room.id;
+  const ps = game.players.map(p => `${p.nick}（UID: ${p.uid}）`).join("，");
+  document.getElementById("gamePlayersInfo").innerText = "玩家：" + ps;
+  renderGameLog();
+  renderHand();
+}
+function renderGameLog() {
+  const el = document.getElementById("gameLog");
+  el.innerText = game.log.join("\n");
+  el.scrollTop = el.scrollHeight;
+}
+function renderHand() {
+  const el = document.getElementById("gameHand");
+  el.innerHTML = "";
+  const my = game.hands[user.uid] || [];
+  my.forEach(t => {
+    const d = document.createElement("div");
+    d.className = "tile " + (t.includes("万")?"tile-wan":t.includes("条")?"tile-tiao":"tile-tong");
+    d.innerText = t;
+    el.appendChild(d);
+  });
+}
+function backToRoom() {
+  loadDB();
+  room = db.rooms[room.id];
+  showRoom();
+}
+
+// ===================== 游戏动作 =====================
+function actDraw() {
+  if (!game || game.wall.length === 0) {
+    addGameLog(game, `【系统】${user.nick}：牌墙已空，流局`);
+    renderGameLog();
+    setTimeout(showResult, 1000);
+    return;
+  }
+  const card = game.wall.pop();
+  game.hands[user.uid].push(card);
+  addGameLog(game, `${user.nick} 摸了：${card}`);
+  renderGameLog();
+  renderHand();
+}
+function actPeng() {
+  addGameLog(game, `${user.nick} 选择 碰`);
+  renderGameLog();
+}
+function actGang() {
+  addGameLog(game, `${user.nick} 选择 杠`);
+  renderGameLog();
+}
+function actHu() {
+  addGameLog(game, `${user.nick} 胡牌！`);
+  renderGameLog();
+  setTimeout(showResult, 1000);
+}
+function actPass() {
+  addGameLog(game, `${user.nick} 选择 过`);
+  renderGameLog();
+}
+
+// ===================== 结算 =====================
+function showResult() {
+  loadDB();
+  gotoPage("resultPage");
+  const r = db.rooms[room.id];
+  const g = r.game;
+  let resHtml = "";
+  const record = {
+    room: r.id,
+    time: new Date().toLocaleString(),
+    details: []
+  };
+  g.players.forEach(p => {
+    const delta = Math.floor(Math.random()*64)-32;
+    const u = db.users[p.uid];
+    u.score = Math.max(0, u.score + delta);
+    u.level = getLevel(u.score);
+    db.users[p.uid] = u;
+    record.details.push({ nick: u.nick, uid: u.uid, delta: delta, score: u.score, level: u.level });
+    resHtml += `${u.nick}（UID: ${u.uid}）：${delta>0?"+"+delta:delta} → ${u.score}（${u.level}）<br>`;
+  });
+  if (!db.records[user.uid]) db.records[user.uid] = [];
+  db.records[user.uid].push(record);
+  r.status = "waiting";
+  r.game = null;
+  saveDB();
+  room = r;
+  document.getElementById("resultContent").innerHTML = resHtml;
+}
+
+// ===================== 观战 =====================
+function watchGame() {
+  gotoPage("watchPage");
+  document.getElementById("watchRoomId").innerText = room.id;
+  const ps = room.players.map(p => `${p.nick}（UID: ${p.uid}）`).join("，");
+  document.getElementById("watchPlayers").innerText = "玩家：" + ps;
+  document.getElementById("watchLog").innerText = room.game ? room.game.log.join("\n") : "游戏尚未开始";
+}
+
+// ===================== 全服排行 =====================
+function showRank() {
+  loadDB();
+  gotoPage("rankPage");
+  const list = Object.values(db.users).sort((a,b) => b.score - a.score);
+  let html = "";
+  list.forEach((u, i) => {
+    html += `<div class="list-item">
+      <div class="rank-no">${i+1}</div>
+      <div class="avatar-small" style="background-image:url(${u.avatar})"></div>
+      <div>
+        <div>${u.nick} <span class="badge badge-primary">UID: ${u.uid}</span></div>
+        <div style="font-size:14px;color:var(--text-secondary);">${u.level} | ${u.score}分</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById("rankList").innerHTML = html;
+}
+
+// ===================== 我的战绩 =====================
+function showRecord() {
+  loadDB();
+  gotoPage("recordPage");
+  const records = db.records[user.uid] || [];
+  let html = "";
+  records.forEach((r, i) => {
+    html += `第${i+1}局 ${r.time}<br>`;
+    r.details.forEach(d => {
+      html += `　${d.nick}（UID: ${d.uid}）：${d.delta>0?"+"+d.delta:d.delta} → ${d.score}（${d.level}）<br>`;
+    });
+    html += "<br>";
+  });
+  if (html === "") html = "暂无战绩";
+  document.getElementById("myRecords").innerHTML = html;
+}
+
+// ===================== 服主后台 =====================
+function adminChangeScore() {
+  if (!user || !user.isAdmin) { alert("无权限"); return; }
+  loadDB();
+  const uid = parseInt(document.getElementById("adminUid").value);
+  const delta = parseInt(document.getElementById("adminScore").value);
+  if (isNaN(uid) || isNaN(delta)) { alert("输入不合法，请输入数字"); return; }
+  const u = db.users[uid];
+  if (!u) { alert("用户不存在"); return; }
+  u.score = Math.max(0, u.score + delta);
+  u.level = getLevel(u.score);
+  db.users[uid] = u;
+  saveDB();
+  alert("修改成功");
+}
+function adminKick() {
+  if (!user || !user.isAdmin) { alert("无权限"); return; }
+  alert("踢出功能已内置，正式环境可对接在线用户列表");
+}
+function adminClearRecord() {
+  if (!user || !user.isAdmin) { alert("无权限"); return; }
+  loadDB();
+  const uid = parseInt(document.getElementById("adminUid").value);
+  if (isNaN(uid)) { alert("输入用户UID"); return; }
+  db.records[uid] = [];
+  saveDB();
+  alert("清空成功");
+}
+
+// ===================== 初始化 =====================
+window.onload = () => {
+  loadDB();
+  loadUser();
+  if (user) {
+    refreshHall();
+    const r = localStorage.getItem("majiang_room");
+    if (r) {
+      room = JSON.parse(r);
+      showRoom();
+    } else {
+      gotoPage("hallPage");
+    }
+  } else {
+    gotoPage("loginPage");
+  }
+
+  // 路由绑定
+  document.querySelector("#hallPage button[onclick*='rankPage']").onclick = showRank;
+  document.querySelector("#hallPage button[onclick*='recordPage']").onclick = showRecord;
+  document.querySelector("#roomPage #watchBtn").onclick = watchGame;
+};
+</script>
+</body>
+</html>

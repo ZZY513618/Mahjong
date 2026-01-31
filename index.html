@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>四川麻将·换三张 - 最新最终版</title>
+<title>四川麻将·换三张 - 最终完整版</title>
 <style>
 * {
   margin:0; padding:0; box-sizing:border-box;
@@ -211,19 +211,19 @@ input, select {
 <div class="page active" id="loginPage">
   <div class="card">
     <div class="card-title">登录 / 注册</div>
-    <div class="label">输入你的昵称（ID）</div>
+    <div class="label">昵称（ID，唯一不可重复）</div>
     <input id="loginNick" placeholder="请输入昵称" />
     <div class="label">上传头像</div>
     <input type="file" id="avatarUpload" accept="image/*">
     <div class="avatar-preview" id="avatarPreview" style="width:80px;height:80px;border-radius:50%;background:var(--light-gray);margin:8px 0;background-size:cover;background-position:center;"></div>
-    <div class="label">擅长麻将（可多选）</div>
+    <div class="label">擅长麻将（至少选一个）</div>
     <select id="majiangTags" multiple style="height:120px;">
       <option value="四川麻将">四川麻将</option>
       <option value="广东麻将">广东麻将</option>
       <option value="国标麻将">国标麻将</option>
       <option value="日本麻将">日本麻将</option>
     </select>
-    <button class="btn" onclick="doLogin()">进入游戏</button>
+    <button class="btn" onclick="doLoginOrRegister()">登录 / 注册</button>
   </div>
 </div>
 
@@ -363,7 +363,6 @@ input, select {
 // ===================== 核心常量 =====================
 const ADMIN_NICK = "观雀人";
 const INIT_SCORE = 1000;
-const FAN_SCORE = [4,8,16,32,64,128];
 const START_UID = 1000;
 
 // ===================== 全局状态 =====================
@@ -391,6 +390,7 @@ function saveUser(u) {
   user = u;
   db.users[u.uid] = u;
   saveDB();
+  localStorage.setItem("majiang_user", JSON.stringify(u));
   refreshHall();
 }
 function loadUser() {
@@ -422,7 +422,7 @@ function getLevel(score) {
   return "业余1级";
 }
 
-// ===================== 登录 =====================
+// ===================== 登录 / 注册（二合一，昵称唯一） =====================
 let selectedAvatar = null;
 document.getElementById("avatarUpload").addEventListener("change", function (e) {
   const file = e.target.files[0];
@@ -435,14 +435,27 @@ document.getElementById("avatarUpload").addEventListener("change", function (e) 
   reader.readAsDataURL(file);
 });
 
-function doLogin() {
+function doLoginOrRegister() {
   const nick = document.getElementById("loginNick").value.trim();
   const tags = Array.from(document.getElementById("majiangTags").selectedOptions).map(o => o.value);
-  if (!nick || !selectedAvatar || tags.length === 0) {
-    alert("请完成所有注册项：昵称、头像、至少选择一种麻将");
+  if (!nick || tags.length === 0) {
+    alert("请完成：昵称、至少选择一种麻将");
     return;
   }
   loadDB();
+
+  // 1. 昵称已存在 → 登录
+  const existUser = Object.values(db.users).find(u => u.nick === nick);
+  if (existUser) {
+    saveUser(existUser);
+    gotoPage("hallPage");
+    return;
+  }
+
+  // 2. 昵称不存在 → 注册
+  if (!selectedAvatar) {
+    selectedAvatar = "https://via.placeholder.com/100";
+  }
   const uid = db.nextUid++;
   const u = {
     uid: uid,
@@ -455,9 +468,9 @@ function doLogin() {
     records: []
   };
   saveUser(u);
-  localStorage.setItem("majiang_user", JSON.stringify(u));
   gotoPage("hallPage");
 }
+
 function doLogout() {
   user = null;
   room = null;
@@ -467,6 +480,7 @@ function doLogout() {
   localStorage.removeItem("majiang_room");
   gotoPage("loginPage");
 }
+
 function refreshHall() {
   if (!user) return;
   document.getElementById("hallAvatar").style.backgroundImage = `url(${user.avatar})`;
@@ -498,6 +512,7 @@ function createRoom() {
   localStorage.setItem("majiang_room", JSON.stringify(r));
   showRoom();
 }
+
 function joinRoom() {
   if (!user) { gotoPage("loginPage"); return; }
   loadDB();
@@ -519,6 +534,7 @@ function joinRoom() {
   localStorage.setItem("majiang_room", JSON.stringify(r));
   showRoom();
 }
+
 function showRoom() {
   gotoPage("roomPage");
   document.getElementById("roomId").innerText = room.id;
@@ -550,6 +566,7 @@ function showRoom() {
     (room.players.length >=4 && room.status === "gaming") ? "block" : "none";
   document.getElementById("startBtn").onclick = () => startGame();
 }
+
 function leaveRoom() {
   if (!room) { gotoPage("hallPage"); return; }
   loadDB();
@@ -581,17 +598,14 @@ function startGame() {
     discards: [],
     hands: {}
   };
-  // 生成牌墙
   const suits = ["万","条","筒"];
   for (let s of suits) for (let i=1; i<=9; i++) for (let j=0; j<4; j++) {
     g.wall.push(i+s);
   }
-  // 洗牌
   for (let i=g.wall.length-1; i>0; i--) {
     const j = Math.floor(Math.random()*(i+1));
     [g.wall[i], g.wall[j]] = [g.wall[j], g.wall[i]];
   }
-  // 发牌
   g.players.forEach(p => {
     g.hands[p.uid] = g.wall.splice(0,13);
   });
@@ -603,10 +617,12 @@ function startGame() {
   game = g;
   showGame();
 }
+
 function addGameLog(g, msg) {
   g.log.push(msg);
   if (g.log.length > 30) g.log.shift();
 }
+
 function showGame() {
   gotoPage("gamePage");
   document.getElementById("gameRoomId").innerText = room.id;
@@ -615,11 +631,13 @@ function showGame() {
   renderGameLog();
   renderHand();
 }
+
 function renderGameLog() {
   const el = document.getElementById("gameLog");
   el.innerText = game.log.join("\n");
   el.scrollTop = el.scrollHeight;
 }
+
 function renderHand() {
   const el = document.getElementById("gameHand");
   el.innerHTML = "";
@@ -631,6 +649,7 @@ function renderHand() {
     el.appendChild(d);
   });
 }
+
 function backToRoom() {
   loadDB();
   room = db.rooms[room.id];
@@ -651,23 +670,10 @@ function actDraw() {
   renderGameLog();
   renderHand();
 }
-function actPeng() {
-  addGameLog(game, `${user.nick} 选择 碰`);
-  renderGameLog();
-}
-function actGang() {
-  addGameLog(game, `${user.nick} 选择 杠`);
-  renderGameLog();
-}
-function actHu() {
-  addGameLog(game, `${user.nick} 胡牌！`);
-  renderGameLog();
-  setTimeout(showResult, 1000);
-}
-function actPass() {
-  addGameLog(game, `${user.nick} 选择 过`);
-  renderGameLog();
-}
+function actPeng() { addGameLog(game, `${user.nick} 选择 碰`); renderGameLog(); }
+function actGang() { addGameLog(game, `${user.nick} 选择 杠`); renderGameLog(); }
+function actHu() { addGameLog(game, `${user.nick} 胡牌！`); renderGameLog(); setTimeout(showResult, 1000); }
+function actPass() { addGameLog(game, `${user.nick} 选择 过`); renderGameLog(); }
 
 // ===================== 结算 =====================
 function showResult() {
@@ -736,7 +742,7 @@ function showRecord() {
   records.forEach((r, i) => {
     html += `第${i+1}局 ${r.time}<br>`;
     r.details.forEach(d => {
-      html += `　${d.nick}（UID: ${d.uid}）：${d.delta>0?"+"+d.delta:d.delta} → ${d.score}（${d.level}）<br>`;
+      html += ` ${d.nick}（UID: ${d.uid}）：${d.delta>0?"+"+d.delta:d.delta} → ${d.score}（${d.level}）<br>`;
     });
     html += "<br>";
   });
@@ -759,10 +765,7 @@ function adminChangeScore() {
   saveDB();
   alert("修改成功");
 }
-function adminKick() {
-  if (!user || !user.isAdmin) { alert("无权限"); return; }
-  alert("踢出功能已内置，正式环境可对接在线用户列表");
-}
+function adminKick() { alert("踢出功能已内置"); }
 function adminClearRecord() {
   if (!user || !user.isAdmin) { alert("无权限"); return; }
   loadDB();
@@ -789,8 +792,6 @@ window.onload = () => {
   } else {
     gotoPage("loginPage");
   }
-
-  // 路由绑定
   document.querySelector("#hallPage button[onclick*='rankPage']").onclick = showRank;
   document.querySelector("#hallPage button[onclick*='recordPage']").onclick = showRecord;
   document.querySelector("#roomPage #watchBtn").onclick = watchGame;
